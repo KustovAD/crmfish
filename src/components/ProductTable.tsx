@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Pencil, Search, ShieldCheck, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Package, Pencil, Search, ShieldCheck, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { costRub, filterAndSort, isBought, profitRub } from '../lib/calc';
 import { fmtCny, fmtDate, fmtRub, fmtRubSigned, shortUrl } from '../lib/format';
@@ -27,6 +27,20 @@ function TriSelect({ label, value, onChange, yes, no }: { label: string; value: 
         <option value="no">{no}</option>
       </select>
     </label>
+  );
+}
+
+function Thumb({ src, size = 'h-11 w-11' }: { src: string; size?: string }) {
+  return (
+    <div className={`${size} flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-800 bg-slate-950`}>
+      {src ? (
+        <a href={src} target="_blank" rel="noopener noreferrer">
+          <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" className={`${size} object-cover`} />
+        </a>
+      ) : (
+        <Package className="h-4 w-4 text-slate-600" />
+      )}
+    </div>
   );
 }
 
@@ -101,7 +115,7 @@ export function ProductTable({ products, rate, filters, sort, onFilters, onSort,
         <>
           {/* Таблица — планшет и десктоп */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[1060px] text-sm">
+            <table className="w-full min-w-[1100px] text-sm">
               <thead className="bg-slate-950/50 text-xs uppercase tracking-wide text-slate-400">
                 <tr>
                   <SortTh k="title">Товар</SortTh>
@@ -122,7 +136,10 @@ export function ProductTable({ products, rate, filters, sort, onFilters, onSort,
                   const profit = profitRub(p, rate);
                   return (
                     <tr key={p.id} className="transition hover:bg-slate-800/30">
-                      <td className="max-w-[280px] px-3 py-2.5">
+                      <td className="max-w-[320px] px-3 py-2.5">
+                        <div className="flex items-center gap-3">
+                        <Thumb src={p.imageUrl} />
+                        <div className="min-w-0">
                         <div className="truncate font-medium text-slate-100" title={p.title}>
                           {p.title}
                         </div>
@@ -136,6 +153,8 @@ export function ProductTable({ products, rate, filters, sort, onFilters, onSort,
                             {shortUrl(p.url)} <ExternalLink className="h-3 w-3" />
                           </a>
                         )}
+                        </div>
+                        </div>
                       </td>
                       <td className="num px-3 py-2.5 text-right text-slate-300">{fmtCny(p.priceCny)}</td>
                       <td className="num px-3 py-2.5 text-right text-slate-300">{fmtRub(p.deliveryRub || 0)}</td>
@@ -187,7 +206,8 @@ export function ProductTable({ products, rate, filters, sort, onFilters, onSort,
               return (
                 <li key={p.id} className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    <Thumb src={p.imageUrl} size="h-14 w-14" />
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 font-medium">
                         {p.isOriginal && <ShieldCheck className="h-4 w-4 shrink-0 text-violet-400" />}
                         <span className="truncate">{p.title}</span>
