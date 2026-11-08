@@ -99,10 +99,10 @@ export function ProductForm({ open, initial, rate, onClose, onSubmit }: Props) {
         priceCny: r.priceCny ? String(r.priceCny) : prev.priceCny,
         imageUrl: r.imageUrl ?? prev.imageUrl,
       }));
-      const got = [r.title && 'название', r.priceCny && 'цена', r.imageUrl && 'фото'].filter(Boolean);
+      const got = [r.url && 'ссылка', r.title && 'название', r.priceCny && 'цена', r.imageUrl && 'фото'].filter(Boolean);
       setParseNote({
         ok: !r.warning,
-        text: [got.length ? `Заполнено: ${got.join(', ')}` : 'Ничего не найдено', r.warning].filter(Boolean).join('. '),
+        text: [got.length ? `Распознано: ${got.join(', ')}` : 'Ссылка не найдена', r.warning].filter(Boolean).join('. '),
       });
     } finally {
       setParsing(false);

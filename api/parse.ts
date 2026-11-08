@@ -11,14 +11,27 @@
  */
 import { createHash } from 'node:crypto';
 
-export const config = { maxDuration: 20 };
+export const config = { maxDuration: 30 };
 
 const UA_MOBILE =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const UA_DESKTOP =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 
-const APP_KEY = '34839810';
+/** Шлюзы mtop: основной у Goofish и общий у Taobao (запасной) */
+const GATEWAYS = [
+  { host: 'h5api.m.goofish.com', appKey: '34839810', origin: 'https://www.goofish.com' },
+  { host: 'h5api.m.taobao.com', appKey: '12574478', origin: 'https://h5.m.goofish.com' },
+];
+type Gateway = (typeof GATEWAYS)[number];
+
+/** Понятная причина сетевой ошибки: fetch в Node прячет её в e.cause */
+function describeError(e: unknown): string {
+  if (!(e instanceof Error)) return String(e);
+  const cause = (e as Error & { cause?: { code?: string; message?: string } }).cause;
+  if (e.name === 'TimeoutError' || e.name === 'AbortError') return 'таймаут';
+  return cause?.code ?? cause?.message ?? e.message;
+}
 const API = 'mtop.taobao.idle.pc.detail';
 
 /* ---------- разбор текста (та же логика, что в src/lib/xianyu.ts) ---------- */
@@ -70,6 +83,7 @@ async function resolveItemId(url: string): Promise<string | null> {
   for (let i = 0; i < 5; i++) {
     const res = await fetch(current, {
       redirect: 'manual',
+      signal: AbortSignal.timeout(6000),
       headers: { 'user-agent': UA_MOBILE, 'accept-language': 'zh-CN,zh;q=0.9' },
     });
     const location = res.headers.get('location');
@@ -116,14 +130,14 @@ interface MtopResult {
   };
 }
 
-async function callDetail(itemId: string, cookies: Record<string, string>) {
+async function callDetail(gw: Gateway, itemId: string, cookies: Record<string, string>) {
   const data = JSON.stringify({ itemId });
   const token = (cookies._m_h5_tk ?? '').split('_')[0];
   const t = Date.now().toString();
-  const sign = md5(`${token}&${t}&${APP_KEY}&${data}`);
+  const sign = md5(`${token}&${t}&${gw.appKey}&${data}`);
   const qs = new URLSearchParams({
     jsv: '2.7.2',
-    appKey: APP_KEY,
+    appKey: gw.appKey,
     t,
     sign,
     v: '1.0',
@@ -137,13 +151,14 @@ async function callDetail(itemId: string, cookies: Record<string, string>) {
   const cookieHeader = Object.entries(cookies)
     .map(([k, v]) => `${k}=${v}`)
     .join('; ');
-  const res = await fetch(`https://h5api.m.goofish.com/h5/${API}/1.0/?${qs}`, {
+  const res = await fetch(`https://${gw.host}/h5/${API}/1.0/?${qs}`, {
+    signal: AbortSignal.timeout(6000),
     method: 'POST',
     headers: {
       'user-agent': UA_DESKTOP,
       'content-type': 'application/x-www-form-urlencoded',
-      origin: 'https://www.goofish.com',
-      referer: 'https://www.goofish.com/',
+      origin: gw.origin,
+      referer: `${gw.origin}/`,
       accept: 'application/json',
       ...(cookieHeader ? { cookie: cookieHeader } : {}),
     },
@@ -153,13 +168,28 @@ async function callDetail(itemId: string, cookies: Record<string, string>) {
   return { json, cookies: { ...cookies, ...readCookies(res) } };
 }
 
-/** Первый запрос выдаёт токен в cookie (_m_h5_tk), второй — уже подписанный */
-async function fetchDetail(itemId: string) {
-  let { json, cookies } = await callDetail(itemId, {});
-  if (!json.ret?.[0]?.startsWith('SUCCESS') && cookies._m_h5_tk) {
-    ({ json } = await callDetail(itemId, cookies));
+/**
+ * Первый запрос выдаёт токен в cookie (_m_h5_tk), второй — уже подписанный.
+ * Пробуем шлюзы по очереди; если все отказали — бросаем ошибку со всеми причинами.
+ */
+async function fetchDetail(itemId: string): Promise<MtopResult> {
+  const problems: string[] = [];
+  let last: MtopResult | null = null;
+  for (const gw of GATEWAYS) {
+    try {
+      let { json, cookies } = await callDetail(gw, itemId, {});
+      if (!json.ret?.[0]?.startsWith('SUCCESS') && cookies._m_h5_tk) {
+        ({ json, cookies } = await callDetail(gw, itemId, cookies));
+      }
+      if (json.ret?.[0]?.startsWith('SUCCESS') && json.data?.itemDO) return json;
+      last = json;
+      problems.push(`${gw.host}: ${(json.ret?.[0] ?? 'пустой ответ').split('::')[0]}`);
+    } catch (e) {
+      problems.push(`${gw.host}: ${describeError(e)}`);
+    }
   }
-  return json;
+  if (last) return { ...last, ret: [problems.join('; ')] };
+  throw new Error(problems.join('; '));
 }
 
 const toNumber = (v: unknown): number | null => {
@@ -198,7 +228,12 @@ export async function POST(request: Request): Promise<Response> {
   if (!link) return json({ ...result, warning: 'В тексте не найдена ссылка' });
 
   try {
-    const itemId = await resolveItemId(link);
+    let itemId: string | null;
+    try {
+      itemId = await resolveItemId(link);
+    } catch (e) {
+      return json({ ...result, warning: `Не удалось открыть короткую ссылку m.tb.cn (${describeError(e)}) — вставьте прямую ссылку goofish.com/item?id=…` });
+    }
     if (!itemId) return json({ ...result, warning: 'Не удалось определить товар по ссылке — фото и цену введите вручную' });
 
     result.itemId = itemId;
@@ -207,10 +242,9 @@ export async function POST(request: Request): Promise<Response> {
     const detail = await fetchDetail(itemId);
     const item = detail.data?.itemDO;
     if (!detail.ret?.[0]?.startsWith('SUCCESS') || !item) {
-      const reason = detail.ret?.[0] ?? 'нет ответа';
       return json({
         ...result,
-        warning: `Goofish не отдал карточку (${reason.split('::')[0]}) — фото и цену введите вручную`,
+        warning: `Goofish не отдал карточку (${detail.ret?.[0] ?? 'нет ответа'}) — фото и цену введите вручную`,
       });
     }
 
@@ -221,6 +255,9 @@ export async function POST(request: Request): Promise<Response> {
     if (!result.title) result.warning = 'В названии нет английских слов — впишите название вручную';
     return json(result);
   } catch (e) {
-    return json({ ...result, warning: `Ошибка запроса к Goofish: ${e instanceof Error ? e.message : String(e)}` });
+    return json({
+      ...result,
+      warning: `Не удалось связаться с Goofish (${e instanceof Error ? e.message : String(e)}) — фото и цену введите вручную`,
+    });
   }
 }
