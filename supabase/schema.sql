@@ -8,7 +8,6 @@ create table if not exists public.products (
   id              uuid primary key default gen_random_uuid(),
   url             text        not null default '',
   title           text        not null,
-  image_url       text,
   price_cny       numeric     not null default 0,
   delivery_rub    numeric     not null default 0,
   is_original     boolean     not null default false,
@@ -22,7 +21,6 @@ create table if not exists public.products (
 
 -- Для баз, созданных до появления поля доставки
 alter table public.products add column if not exists delivery_rub numeric not null default 0;
-alter table public.products add column if not exists image_url text;
 
 -- Глобальные настройки (ровно одна строка с id = 1)
 create table if not exists public.settings (

@@ -20,7 +20,6 @@ interface ProductRow {
   id: string;
   url: string;
   title: string;
-  image_url: string | null;
   price_cny: number | string;
   delivery_rub: number | string | null;
   is_original: boolean;
@@ -36,7 +35,6 @@ const fromRow = (r: ProductRow): Product => ({
   id: r.id,
   url: r.url ?? '',
   title: r.title ?? '',
-  imageUrl: r.image_url ?? '',
   priceCny: Number(r.price_cny) || 0,
   deliveryRub: Number(r.delivery_rub) || 0,
   isOriginal: !!r.is_original,
@@ -52,7 +50,6 @@ const toRow = (p: Product): ProductRow => ({
   id: p.id,
   url: p.url,
   title: p.title,
-  image_url: p.imageUrl || null,
   price_cny: p.priceCny,
   delivery_rub: p.deliveryRub,
   is_original: p.isOriginal,

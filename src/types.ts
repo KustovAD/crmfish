@@ -5,8 +5,6 @@ export interface Product {
   url: string;
   /** Название / краткое описание */
   title: string;
-  /** Ссылка на фото товара */
-  imageUrl: string;
   /** Стоимость в юанях, ¥ */
   priceCny: number;
   /** Стоимость доставки, ₽ (до получателя) */
@@ -30,7 +28,7 @@ export interface Product {
 /** Поля, которые пользователь вводит в форме */
 export type ProductInput = Pick<
   Product,
-  'url' | 'title' | 'imageUrl' | 'priceCny' | 'deliveryRub' | 'isOriginal' | 'isOrdered' | 'salePriceRub' | 'isSold'
+  'url' | 'title' | 'priceCny' | 'deliveryRub' | 'isOriginal' | 'isOrdered' | 'salePriceRub' | 'isSold'
 >;
 
 /** Глобальные настройки — общие для всех пользователей */

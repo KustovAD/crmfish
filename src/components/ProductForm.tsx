@@ -1,15 +1,12 @@
-import { ImageOff, Loader2, Sparkles, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
-import { fmtRub, fmtRubSigned, parseNum } from '../lib/format';
-import { extractUrl, looksLikeXianyu, parseXianyu } from '../lib/xianyu';
+import { extractUrl, fmtRub, fmtRubSigned, parseNum } from '../lib/format';
 import type { Product, ProductInput } from '../types';
 import { Toggle } from './Toggle';
 
 interface Props {
   open: boolean;
   initial?: Product | null;
-  /** Начальные значения для нового товара (от букмарклета) */
-  prefill?: Partial<ProductInput> | null;
   rate: number;
   onClose: () => void;
   onSubmit: (data: ProductInput) => void;
@@ -18,7 +15,6 @@ interface Props {
 interface Draft {
   url: string;
   title: string;
-  imageUrl: string;
   priceCny: string;
   deliveryRub: string;
   salePriceRub: string;
@@ -30,7 +26,6 @@ interface Draft {
 const empty: Draft = {
   url: '',
   title: '',
-  imageUrl: '',
   priceCny: '',
   deliveryRub: '',
   salePriceRub: '',
@@ -39,24 +34,18 @@ const empty: Draft = {
   isSold: false,
 };
 
-export function ProductForm({ open, initial, prefill, rate, onClose, onSubmit }: Props) {
+export function ProductForm({ open, initial, rate, onClose, onSubmit }: Props) {
   const [d, setD] = useState<Draft>(empty);
   const [touched, setTouched] = useState(false);
-  const [parsing, setParsing] = useState(false);
-  const [parseNote, setParseNote] = useState<{ ok: boolean; text: string } | null>(null);
-  const [imgBroken, setImgBroken] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setTouched(false);
-    setParseNote(null);
-    setImgBroken(false);
     setD(
       initial
         ? {
             url: initial.url,
             title: initial.title,
-            imageUrl: initial.imageUrl ?? '',
             priceCny: String(initial.priceCny),
             deliveryRub: initial.deliveryRub ? String(initial.deliveryRub) : '',
             salePriceRub: String(initial.salePriceRub),
@@ -64,24 +53,9 @@ export function ProductForm({ open, initial, prefill, rate, onClose, onSubmit }:
             isOrdered: initial.isOrdered,
             isSold: initial.isSold,
           }
-        : prefill
-          ? {
-              ...empty,
-              url: prefill.url ?? '',
-              title: prefill.title ?? '',
-              imageUrl: prefill.imageUrl ?? '',
-              priceCny: prefill.priceCny ? String(prefill.priceCny) : '',
-            }
-          : empty,
+        : empty,
     );
-    if (!initial && prefill) {
-      const got = [prefill.title && 'название', prefill.priceCny && 'цена', prefill.imageUrl && 'фото'].filter(Boolean);
-      setParseNote({
-        ok: got.length === 3,
-        text: `С Goofish получено: ${got.join(', ') || 'только ссылка'}${prefill.title ? '' : '. В названии нет английских слов — впишите вручную'}`,
-      });
-    }
-  }, [open, initial, prefill]);
+  }, [open, initial]);
 
   useEffect(() => {
     if (!open) return;
@@ -101,35 +75,10 @@ export function ProductForm({ open, initial, prefill, rate, onClose, onSubmit }:
   const cost = item + delivery;
   const profit = sale - cost;
 
-  /** Разбор ссылки / текста «Поделиться» из Xianyu и автозаполнение полей */
-  const runParse = async (text: string) => {
-    if (!text.trim() || parsing) return;
-    setParsing(true);
-    setParseNote(null);
-    try {
-      const r = await parseXianyu(text);
-      setImgBroken(false);
-      setD((prev) => ({
-        ...prev,
-        url: r.url ?? prev.url,
-        title: r.title || prev.title,
-        priceCny: r.priceCny ? String(r.priceCny) : prev.priceCny,
-        imageUrl: r.imageUrl ?? prev.imageUrl,
-      }));
-      const got = [r.url && 'ссылка', r.title && 'название', r.priceCny && 'цена', r.imageUrl && 'фото'].filter(Boolean);
-      setParseNote({
-        ok: !r.warning,
-        text: [got.length ? `Распознано: ${got.join(', ')}` : 'Ссылка не найдена', r.warning].filter(Boolean).join('. '),
-      });
-    } finally {
-      setParsing(false);
-    }
-  };
-
-  const urlValid = !d.url.trim() || extractUrl(d.url) !== null;
+  const urlValid = !d.url.trim() || /^https?:\/\/\S+$/i.test(d.url.trim());
   const errors = {
     title: !d.title.trim() ? 'Укажите название' : null,
-    url: !urlValid ? 'Не найдена ссылка (должна начинаться с http(s)://)' : null,
+    url: !urlValid ? 'Ссылка должна начинаться с http(s)://' : null,
     priceCny: cny <= 0 ? 'Цена в юанях должна быть больше 0' : null,
     deliveryRub: delivery < 0 ? 'Доставка не может быть отрицательной' : null,
   };
@@ -141,7 +90,6 @@ export function ProductForm({ open, initial, prefill, rate, onClose, onSubmit }:
     if (hasErrors) return;
     onSubmit({
       url: extractUrl(d.url) ?? d.url.trim(),
-      imageUrl: d.imageUrl.trim(),
       title: d.title.trim(),
       priceCny: cny,
       deliveryRub: delivery,
@@ -171,74 +119,22 @@ export function ProductForm({ open, initial, prefill, rate, onClose, onSubmit }:
         </div>
 
         <div className="space-y-4">
-          <div>
-            <span className="label">Ссылка или текст «Поделиться» из Xianyu</span>
-            <div className="flex gap-2">
-              <input
-                className="input"
-                placeholder="https://www.goofish.com/item?id=… или текст «Поделиться»"
-                value={d.url}
-                onChange={(e) => set('url', e.target.value)}
-                onPaste={(e) => {
-                  const text = e.clipboardData.getData('text');
-                  if (looksLikeXianyu(text)) {
-                    e.preventDefault();
-                    set('url', text);
-                    void runParse(text);
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className="btn-ghost shrink-0 px-3"
-                onClick={() => void runParse(d.url)}
-                disabled={parsing || !d.url.trim()}
-                title="Загрузить фото, название и цену"
-              >
-                {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                <span className="hidden sm:inline">Загрузить</span>
-              </button>
-            </div>
+          <label className="block">
+            <span className="label">Ссылка на Goofish</span>
+            <input
+              className="input"
+              value={d.url}
+              placeholder="Вставьте ссылку или сообщение из Xianyu целиком"
+              onChange={(e) => set('url', extractUrl(e.target.value) ?? e.target.value)}
+            />
             {err('url')}
-            {parsing && <p className="mt-1 text-xs text-slate-400">Загружаю данные с Goofish…</p>}
-            {parseNote && (
-              <p className={`mt-1 text-xs ${parseNote.ok ? 'text-emerald-400' : 'text-amber-300'}`}>{parseNote.text}</p>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
-              {d.imageUrl && !imgBroken ? (
-                <img
-                  src={d.imageUrl}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  className="h-full w-full object-cover"
-                  onError={() => setImgBroken(true)}
-                />
-              ) : (
-                <ImageOff className="h-6 w-6 text-slate-600" />
-              )}
-            </div>
-            <label className="block flex-1">
-              <span className="label">Фото (ссылка)</span>
-              <input
-                className="input"
-                placeholder="https://img.alicdn.com/…"
-                value={d.imageUrl}
-                onChange={(e) => {
-                  setImgBroken(false);
-                  set('imageUrl', e.target.value);
-                }}
-              />
-            </label>
-          </div>
+          </label>
 
           <label className="block">
             <span className="label">Название / описание *</span>
             <input
               className="input"
-              placeholder="Например: Nike Air Force Max"
+              placeholder="Например: Nike Dunk Low, 42 EU"
               value={d.title}
               onChange={(e) => set('title', e.target.value)}
               autoFocus

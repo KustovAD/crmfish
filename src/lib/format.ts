@@ -40,3 +40,12 @@ export function uid(): string {
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
 }
+
+/**
+ * Достаёт ссылку из сообщения «Поделиться», например:
+ * 【闲鱼】https://m.tb.cn/h.jT0JmLB?tk=d5Yw60pX13X CZ007 「…」 → https://m.tb.cn/h.jT0JmLB?tk=d5Yw60pX13X
+ */
+export function extractUrl(text: string): string | null {
+  const m = text.match(/https?:\/\/[^\s「」【】<>"'，。、]+/i);
+  return m ? m[0] : null;
+}
