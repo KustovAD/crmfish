@@ -7,17 +7,17 @@ interface Props {
   /** Подписи для состояний «вкл/выкл», показываются рядом с переключателем */
   onText?: string;
   offText?: string;
-  color?: 'emerald' | 'cyan' | 'violet';
+  color?: 'emerald' | 'yellow' | 'violet';
   size?: 'sm' | 'md';
 }
 
 const COLORS = {
   emerald: 'bg-emerald-500',
-  cyan: 'bg-cyan-500',
+  yellow: 'bg-yellow-400',
   violet: 'bg-violet-500',
 };
 
-export function Toggle({ checked, onChange, label, ariaLabel, onText, offText, color = 'cyan', size = 'md' }: Props) {
+export function Toggle({ checked, onChange, label, ariaLabel, onText, offText, color = 'yellow', size = 'md' }: Props) {
   const track = size === 'sm' ? 'h-5 w-9' : 'h-6 w-11';
   const knob = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
   const shift = size === 'sm' ? 'translate-x-4' : 'translate-x-5';

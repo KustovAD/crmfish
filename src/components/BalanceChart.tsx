@@ -71,10 +71,8 @@ export function BalanceChart({ data, startCapital }: { data: ChartPoint[]; start
             <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="balFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset={0} stopColor={GREEN} stopOpacity={0.45} />
-                  <stop offset={offset} stopColor={GREEN} stopOpacity={0.08} />
-                  <stop offset={offset} stopColor={RED} stopOpacity={0.08} />
-                  <stop offset={1} stopColor={RED} stopOpacity={0.45} />
+                  <stop offset={offset} stopColor={GREEN} stopOpacity={0.25} />
+                  <stop offset={offset} stopColor={RED} stopOpacity={0.25} />
                 </linearGradient>
                 <linearGradient id="balStroke" x1="0" y1="0" x2="0" y2="1">
                   <stop offset={offset} stopColor={GREEN} />

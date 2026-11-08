@@ -16,7 +16,7 @@ function MetricCard({ title, value, hint, icon, tone = 'default' }: CardProps) {
     default: 'text-slate-100',
     pos: 'text-emerald-400',
     neg: 'text-rose-400',
-    accent: 'text-cyan-300',
+    accent: 'text-yellow-300',
   }[tone];
   return (
     <div className="card p-4">

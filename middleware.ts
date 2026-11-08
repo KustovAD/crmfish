@@ -52,14 +52,13 @@ function loginPage(error = '', status = 401): Response {
 <meta name="robots" content="noindex"><title>CRMFish · вход</title>
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:16px;
-font-family:Inter,system-ui,sans-serif;color:#e2e8f0;background:#020617;
-background-image:radial-gradient(ellipse at top,rgba(34,211,238,.10),transparent 60%)}
+font-family:Inter,system-ui,sans-serif;color:#e2e8f0;background:#020617}
 form{width:100%;max-width:340px;padding:28px;border:1px solid #1e293b;border-radius:18px;background:rgba(15,23,42,.7)}
-h1{margin:0 0 4px;font-size:22px}h1 span{color:#22d3ee}p{margin:0 0 20px;color:#94a3b8;font-size:13px}
+h1{margin:0 0 4px;font-size:22px}h1 span{color:#facc15}p{margin:0 0 20px;color:#94a3b8;font-size:13px}
 input{width:100%;padding:11px 12px;border-radius:12px;border:1px solid #334155;background:#020617;color:#f1f5f9;font-size:15px;outline:none}
-input:focus{border-color:#06b6d4;box-shadow:0 0 0 3px rgba(6,182,212,.2)}
-button{width:100%;margin-top:12px;padding:11px;border:0;border-radius:12px;background:#06b6d4;color:#020617;font-weight:600;font-size:15px;cursor:pointer}
-button:hover{background:#22d3ee}.err{margin:10px 0 0;color:#fb7185;font-size:13px}
+input:focus{border-color:#eab308;box-shadow:0 0 0 3px rgba(234,179,8,.25)}
+button{width:100%;margin-top:12px;padding:11px;border:0;border-radius:12px;background:#eab308;color:#020617;font-weight:600;font-size:15px;cursor:pointer}
+button:hover{background:#facc15}.err{margin:10px 0 0;color:#fb7185;font-size:13px}
 </style></head><body>
 <form method="POST" action="/__login">
 <h1>CRM<span>Fish</span></h1><p>Введите пароль для доступа</p>

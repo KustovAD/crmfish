@@ -12,7 +12,7 @@ export function Header({ onAdd }: Props) {
           <img src="/fish.svg" alt="" className="h-9 w-9" />
           <div>
             <h1 className="text-lg font-bold tracking-tight">
-              CRM<span className="text-cyan-400">Fish</span>
+              CRM<span className="text-yellow-400">Fish</span>
             </h1>
             <p className="hidden text-xs text-slate-400 sm:block">Учёт перепродажи товаров с Goofish</p>
           </div>

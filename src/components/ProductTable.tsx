@@ -56,7 +56,7 @@ export function ProductTable({ products, rate, filters, sort, onFilters, onSort,
     return (
       <th className={`px-3 py-2.5 font-medium ${right ? 'text-right' : 'text-left'}`}>
         <button
-          className={`inline-flex items-center gap-1 hover:text-slate-200 ${active ? 'text-cyan-300' : ''}`}
+          className={`inline-flex items-center gap-1 hover:text-slate-200 ${active ? 'text-yellow-300' : ''}`}
           onClick={() => onSort({ key: k, dir: active && sort.dir === 'desc' ? 'asc' : 'desc' })}
         >
           {children}
@@ -131,7 +131,7 @@ export function ProductTable({ products, rate, filters, sort, onFilters, onSort,
                             href={p.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline"
+                            className="inline-flex items-center gap-1 text-xs text-yellow-400 hover:underline"
                           >
                             {shortUrl(p.url)} <ExternalLink className="h-3 w-3" />
                           </a>
@@ -193,7 +193,7 @@ export function ProductTable({ products, rate, filters, sort, onFilters, onSort,
                         <span className="truncate">{p.title}</span>
                       </div>
                       {p.url && (
-                        <a href={p.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-cyan-400">
+                        <a href={p.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-yellow-400">
                           {shortUrl(p.url)} <ExternalLink className="h-3 w-3" />
                         </a>
                       )}

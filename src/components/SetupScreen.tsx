@@ -2,7 +2,7 @@ import { Database } from 'lucide-react';
 
 /** Показывается, если не заданы ключи Supabase */
 export function SetupScreen() {
-  const code = 'rounded-md bg-slate-950 px-1.5 py-0.5 font-mono text-xs text-cyan-300';
+  const code = 'rounded-md bg-slate-950 px-1.5 py-0.5 font-mono text-xs text-yellow-300';
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="card w-full max-w-lg p-6">
@@ -10,7 +10,7 @@ export function SetupScreen() {
           <img src="/fish.svg" alt="" className="h-10 w-10" />
           <div>
             <h1 className="text-xl font-bold">
-              CRM<span className="text-cyan-400">Fish</span>
+              CRM<span className="text-yellow-400">Fish</span>
             </h1>
             <p className="text-sm text-slate-400">Нужно подключить базу данных</p>
           </div>

@@ -79,7 +79,7 @@ export function SettingsPanel({ settings, onChange }: Props) {
   return (
     <section className="card p-4">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-200">
-        <Settings2 className="h-4 w-4 text-cyan-400" /> Настройки
+        <Settings2 className="h-4 w-4 text-yellow-400" /> Настройки
         <span className="font-normal text-slate-500">· общие для всех</span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -102,7 +102,7 @@ export function SettingsPanel({ settings, onChange }: Props) {
               type="button"
               onClick={fetchCbr}
               disabled={loadingRate}
-              className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
+              className="inline-flex items-center gap-1 text-xs text-yellow-400 hover:text-yellow-300 disabled:opacity-50"
             >
               {loadingRate ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
               Курс ЦБ

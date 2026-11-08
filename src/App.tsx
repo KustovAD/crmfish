@@ -39,7 +39,7 @@ function Crm() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,rgba(34,211,238,0.08),transparent_60%)]">
+    <div className="min-h-screen bg-slate-950">
       <Header onAdd={openAdd} />
 
       <main className="mx-auto max-w-7xl space-y-4 px-4 py-5 sm:px-6">
