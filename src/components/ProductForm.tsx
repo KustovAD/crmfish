@@ -8,6 +8,8 @@ import { Toggle } from './Toggle';
 interface Props {
   open: boolean;
   initial?: Product | null;
+  /** Начальные значения для нового товара (от букмарклета) */
+  prefill?: Partial<ProductInput> | null;
   rate: number;
   onClose: () => void;
   onSubmit: (data: ProductInput) => void;
@@ -37,7 +39,7 @@ const empty: Draft = {
   isSold: false,
 };
 
-export function ProductForm({ open, initial, rate, onClose, onSubmit }: Props) {
+export function ProductForm({ open, initial, prefill, rate, onClose, onSubmit }: Props) {
   const [d, setD] = useState<Draft>(empty);
   const [touched, setTouched] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -62,9 +64,24 @@ export function ProductForm({ open, initial, rate, onClose, onSubmit }: Props) {
             isOrdered: initial.isOrdered,
             isSold: initial.isSold,
           }
-        : empty,
+        : prefill
+          ? {
+              ...empty,
+              url: prefill.url ?? '',
+              title: prefill.title ?? '',
+              imageUrl: prefill.imageUrl ?? '',
+              priceCny: prefill.priceCny ? String(prefill.priceCny) : '',
+            }
+          : empty,
     );
-  }, [open, initial]);
+    if (!initial && prefill) {
+      const got = [prefill.title && 'название', prefill.priceCny && 'цена', prefill.imageUrl && 'фото'].filter(Boolean);
+      setParseNote({
+        ok: got.length === 3,
+        text: `С Goofish получено: ${got.join(', ') || 'только ссылка'}${prefill.title ? '' : '. В названии нет английских слов — впишите вручную'}`,
+      });
+    }
+  }, [open, initial, prefill]);
 
   useEffect(() => {
     if (!open) return;

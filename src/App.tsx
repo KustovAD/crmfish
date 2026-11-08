@@ -1,6 +1,7 @@
 import { AlertTriangle, Loader2, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BalanceChart } from './components/BalanceChart';
+import { BookmarkletCard } from './components/BookmarkletCard';
 import { Dashboard } from './components/Dashboard';
 import { Header } from './components/Header';
 import { ProductForm } from './components/ProductForm';
@@ -9,8 +10,10 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { isSupabaseConfigured } from './config';
 import { SetupScreen } from './components/SetupScreen';
 import { useCrmData } from './hooks/useCrmData';
+import { takeAddPayload } from './lib/bookmarklet';
 import { buildChartData, computeMetrics } from './lib/calc';
-import type { Filters, Product, SortState } from './types';
+import { englishOnly } from './lib/xianyu';
+import type { Filters, Product, ProductInput, SortState } from './types';
 
 export default function App() {
   return isSupabaseConfigured ? <Crm /> : <SetupScreen />;
@@ -24,6 +27,21 @@ function Crm() {
   const [sort, setSort] = useState<SortState>({ key: 'createdAt', dir: 'desc' });
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [prefill, setPrefill] = useState<Partial<ProductInput> | null>(null);
+
+  // Данные от букмарклета «+ CRMFish»: открываем форму уже заполненной
+  useEffect(() => {
+    const p = takeAddPayload();
+    if (!p) return;
+    setEditing(null);
+    setPrefill({
+      url: p.url ?? '',
+      title: englishOnly(p.title ?? ''),
+      priceCny: Number(p.priceCny) || 0,
+      imageUrl: p.imageUrl ?? '',
+    });
+    setFormOpen(true);
+  }, []);
 
   // Все расчёты пересчитываются при любом изменении курса, цен и статусов
   const metrics = useMemo(() => computeMetrics(products, settings), [products, settings]);
@@ -31,10 +49,12 @@ function Crm() {
 
   const openAdd = () => {
     setEditing(null);
+    setPrefill(null);
     setFormOpen(true);
   };
   const openEdit = (p: Product) => {
     setEditing(p);
+    setPrefill(null);
     setFormOpen(true);
   };
 
@@ -79,6 +99,7 @@ function Crm() {
                     <dd className="num text-right text-slate-200">{metrics.counts.original}</dd>
                   </dl>
                 </section>
+                <BookmarkletCard />
               </div>
             </div>
 
@@ -104,6 +125,7 @@ function Crm() {
       <ProductForm
         open={formOpen}
         initial={editing}
+        prefill={prefill}
         rate={settings.rate}
         onClose={() => setFormOpen(false)}
         onSubmit={(input) => (editing ? data.updateProduct(editing.id, input) : data.addProduct(input))}

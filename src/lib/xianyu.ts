@@ -96,7 +96,9 @@ export async function parseXianyu(text: string): Promise<ParsedItem> {
         title: r.title || local.title,
         priceCny: typeof r.priceCny === 'number' && r.priceCny > 0 ? r.priceCny : null,
         imageUrl: r.imageUrl || null,
-        warning: r.warning,
+        warning: r.warning?.includes('RGV587')
+          ? 'Goofish блокирует запросы с сервера — фото и цену удобнее добавлять кнопкой «＋ CRMFish» из закладок'
+          : r.warning,
       };
     }
   } catch {
