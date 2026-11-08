@@ -19,8 +19,22 @@ export interface ParsedItem {
 
 /** Первая ссылка из произвольного текста */
 export function extractUrl(text: string): string | null {
-  const m = text.match(/https?:\/\/[^\s「」【】<>"'，。、]+/i);
-  return m ? m[0] : null;
+  // ссылка с http(s):// или без него (www.goofish.com/…, m.tb.cn/…)
+  const m = text.match(/(?:https?:\/\/|(?:www\.|h5\.m\.)?goofish\.com\/|m\.tb\.cn\/)[^\s「」【】<>"'，。、]*/i);
+  if (!m) return null;
+  return /^https?:\/\//i.test(m[0]) ? m[0] : `https://${m[0]}`;
+}
+
+/** id товара из ссылки Goofish/Xianyu/Taobao (?id=…, ?itemId=…) */
+export function findItemId(url: string): string | null {
+  return url.match(/[?&](?:itemId|item_id|id)=(\d{6,})/)?.[1] ?? null;
+}
+
+/** Убирает трекинговые параметры: …item?id=123&spm=…&ut_sk=… → https://www.goofish.com/item?id=123 */
+export function canonicalUrl(url: string): string {
+  if (/m\.tb\.cn/i.test(url)) return url; // короткую ссылку раскрывает сервер
+  const id = /goofish\.com|taobao\.com|xianyu/i.test(url) ? findItemId(url) : null;
+  return id ? `https://www.goofish.com/item?id=${id}` : url;
 }
 
 /** Название из текста «Поделиться»: содержимое 「…」, а внутри — 【…】, если есть */
@@ -54,8 +68,9 @@ export function looksLikeXianyu(text: string): boolean {
 
 /** Разбор только по тексту — работает без сервера */
 export function parseShareText(text: string): ParsedItem {
+  const url = extractUrl(text);
   return {
-    url: extractUrl(text),
+    url: url ? canonicalUrl(url) : null,
     title: englishOnly(extractShareTitle(text)),
     priceCny: null,
     imageUrl: null,

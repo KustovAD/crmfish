@@ -159,7 +159,7 @@ export function ProductForm({ open, initial, rate, onClose, onSubmit }: Props) {
             <div className="flex gap-2">
               <input
                 className="input"
-                placeholder="【闲鱼】https://m.tb.cn/… или https://www.goofish.com/item?id=…"
+                placeholder="https://www.goofish.com/item?id=… или текст «Поделиться»"
                 value={d.url}
                 onChange={(e) => set('url', e.target.value)}
                 onPaste={(e) => {

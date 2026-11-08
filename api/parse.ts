@@ -24,8 +24,9 @@ const API = 'mtop.taobao.idle.pc.detail';
 /* ---------- разбор текста (та же логика, что в src/lib/xianyu.ts) ---------- */
 
 function extractUrl(text: string): string | null {
-  const m = text.match(/https?:\/\/[^\s「」【】<>"'，。、]+/i);
-  return m ? m[0] : null;
+  const m = text.match(/(?:https?:\/\/|(?:www\.|h5\.m\.)?goofish\.com\/|m\.tb\.cn\/)[^\s「」【】<>"'，。、]*/i);
+  if (!m) return null;
+  return /^https?:\/\//i.test(m[0]) ? m[0] : `https://${m[0]}`;
 }
 
 function extractShareTitle(text: string): string {
