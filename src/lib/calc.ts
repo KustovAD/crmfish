@@ -80,46 +80,47 @@ export function computeMetrics(products: Product[], s: Settings): Metrics {
 }
 
 export interface ChartPoint {
-  date: string; // ISO (начало дня)
-  label: string;
+  /** Время события, мс */
+  ts: number;
+  /** Накопленный баланс после события, ₽ */
   balance: number;
+  /** Изменение баланса этим событием, ₽ */
   change: number;
+  /** Что произошло: «Заказ» / «Продажа» / «Старт» */
+  kind: 'start' | 'order' | 'sale';
+  /** Название товара */
+  title: string;
 }
 
 /**
- * Накопленный баланс по датам.
- * Заказ товара: −себестоимость (на дату заказа, иначе — дату добавления).
- * Продажа:      +цена продажи (на дату продажи, иначе — дату добавления).
+ * Накопленный баланс: каждое событие — отдельная точка со своим временем.
+ * Заказ товара: −себестоимость (в момент заказа, иначе — добавления).
+ * Продажа:      +цена продажи (в момент продажи).
  */
 export function buildChartData(products: Product[], rate: number): ChartPoint[] {
-  const byDay = new Map<string, number>();
-  const add = (iso: string, delta: number) => {
-    const d = new Date(iso);
-    d.setHours(0, 0, 0, 0);
-    const key = d.toISOString();
-    byDay.set(key, (byDay.get(key) ?? 0) + delta);
-  };
-
+  const events: Omit<ChartPoint, 'balance'>[] = [];
   for (const p of products) {
     if (!isBought(p)) continue;
-    add(p.orderedAt ?? p.createdAt, -costRub(p, rate));
-    if (p.isSold) add(p.soldAt ?? p.orderedAt ?? p.createdAt, p.salePriceRub);
+    const orderTs = new Date(p.orderedAt ?? p.createdAt).getTime();
+    events.push({ ts: orderTs, change: -costRub(p, rate), kind: 'order', title: p.title });
+    if (p.isSold) {
+      // продажа не может быть раньше заказа
+      const saleTs = Math.max(new Date(p.soldAt ?? p.orderedAt ?? p.createdAt).getTime(), orderTs + 1);
+      events.push({ ts: saleTs, change: p.salePriceRub, kind: 'sale', title: p.title });
+    }
   }
+  if (events.length === 0) return [];
+  events.sort((a, b) => a.ts - b.ts);
 
-  const days = [...byDay.keys()].sort();
-  if (days.length === 0) return [];
-
-  const dayLabel = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short' });
-  const start = new Date(days[0]);
-  start.setDate(start.getDate() - 1);
-  const points: ChartPoint[] = [
-    { date: start.toISOString(), label: dayLabel.format(start), balance: 0, change: 0 },
-  ];
+  const first = events[0].ts;
+  const last = events[events.length - 1].ts;
+  // стартовая точка чуть раньше первого события (5% диапазона, минимум минута)
+  const pad = Math.max((last - first) * 0.05, 60_000);
+  const points: ChartPoint[] = [{ ts: first - pad, balance: 0, change: 0, kind: 'start', title: '' }];
   let acc = 0;
-  for (const day of days) {
-    const change = byDay.get(day)!;
-    acc += change;
-    points.push({ date: day, label: dayLabel.format(new Date(day)), balance: Math.round(acc), change: Math.round(change) });
+  for (const e of events) {
+    acc += e.change;
+    points.push({ ...e, balance: Math.round(acc), change: Math.round(e.change) });
   }
   return points;
 }
