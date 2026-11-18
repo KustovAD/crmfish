@@ -2,3 +2,5 @@ node_modules
 dist
 .env.local
 .DS_Store
+# встроенная база — ваши данные, в git не попадают
+data/

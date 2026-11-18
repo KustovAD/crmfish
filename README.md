@@ -1,60 +1,49 @@
 # CRMFish
 
-CRM для перепродажи товаров с Goofish (Xianyu): учёт товаров, себестоимость в ₽ по курсу юаня,
-прибыль по каждой позиции, дашборд и график накопленного баланса (зелёный — плюс, красный — минус).
+CRM для перепродажи товаров с Goofish (Xianyu): учёт товаров, себестоимость в ₽ по курсу юаня (с доставкой),
+прибыль по каждой позиции, дашборд и график баланса по каждому заказу и продаже.
 
-**Стек:** React 18 + TypeScript + Vite + Tailwind CSS + Recharts + Supabase (общая база с realtime).
+**Стек:** React 18 + TypeScript + Vite + Tailwind CSS + Recharts. База — встроенная, файл в папке проекта.
 
 ## Запуск
 
-Нужен Node.js 18+.
+Нужен Node.js 18+ (https://nodejs.org, версия LTS).
 
+**Проще всего:** двойной клик по `CRMFish.command` в Finder. Он сам установит зависимости,
+соберёт приложение, запустит его и откроет http://localhost:5173.
+Если macOS не даёт открыть файл: правый клик → «Открыть» → «Открыть».
+
+**Из терминала:**
 ```bash
 cd ~/Desktop/CRMFIsh
 npm install
-npm run dev
+npm run dev      # режим разработки
+# или
+npm run serve    # сборка + обычный запуск (то же делает CRMFish.command)
 ```
+Остановить — `Ctrl + C` в окне терминала.
 
-Откройте http://localhost:5173. Сначала подключите базу (раздел ниже) — без неё приложение покажет экран настройки.
+## Встроенная база
 
-Сборка для хостинга: `npm run build` → папка `dist/` (подходит для Vercel, Netlify, GitHub Pages и т.п.).
+Все данные лежат в файле **`data/crmfish.json`** в папке проекта. Никакого внешнего сервера и регистрации.
 
-## Подключение базы (Supabase) — 5 минут
+- Сохраняется каждое изменение сразу; запись безопасная — файл не испортится при сбое.
+- При каждом запуске делается копия `data/crmfish.backup.json`.
+- Резервная копия или перенос на другой компьютер — просто скопируйте папку `data`.
+- Папка `data` в `.gitignore`: ваши данные не попадут на GitHub.
+- Пока CRMFish запущен, его можно открыть с телефона или другого компьютера в той же Wi-Fi сети —
+  адрес показывается в терминале при запуске (`http://192.168.x.x:5173`). Изменения видны сразу во всех открытых окнах.
 
-1. Зарегистрируйтесь на https://supabase.com и создайте проект (бесплатный план подходит).
-2. Откройте **SQL Editor → New query**, вставьте содержимое `supabase/schema.sql`, нажмите **Run**.
-3. Нажмите кнопку **Connect** вверху дашборда проекта: там есть *Project URL* и *publishable key* (`sb_publishable_…`).
-   Ключи также лежат в **Project Settings → API Keys**. Подойдёт и publishable, и старый anon-ключ (`eyJ…`).
-4. В корне проекта создайте `.env.local` (образец — `.env.example`):
-   ```
-   VITE_SUPABASE_URL=https://xxxxxxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
-   ```
-   Либо вставьте эти значения прямо в `src/config.ts` (там помечено `← сюда`).
-5. Перезапустите `npm run dev`.
+> Приложение работает, только пока запущено на вашем компьютере. Vercel для него больше не нужен:
+> на Vercel нельзя хранить файлы, поэтому встроенная база там работать не будет.
 
-Изменения синхронизируются между всеми пользователями в реальном времени (Supabase Realtime).
-При деплое на хостинг добавьте те же две переменные в настройки окружения хостинга.
+### Перенос данных из Supabase (однократно)
 
-## Деплой на Vercel с паролем
-
-1. Запушьте проект на GitHub (`.env.local` в репозиторий не попадёт — он в `.gitignore`).
-2. На vercel.com: **Add New → Project →** выберите репозиторий. Фреймворк определится как Vite.
-3. **Settings → Environment Variables** добавьте:
-   | Имя | Значение |
-   |---|---|
-   | `APP_PASSWORD` | пароль для входа на сайт |
-   | `VITE_SUPABASE_URL` | Project URL из Supabase |
-   | `VITE_SUPABASE_ANON_KEY` | publishable key (`sb_publishable_…`) из Supabase |
-4. **Deployments → … → Redeploy**, чтобы переменные применились.
-
-Пароль проверяет `middleware.ts` на сервере Vercel: без него не отдаётся ни страница, ни JS,
-поэтому и ключ Supabase посторонним не виден. Вход запоминается на 30 дней, кнопка выхода — в шапке.
-Сменили `APP_PASSWORD` и сделали Redeploy — все старые входы сбрасываются.
-Локально (`npm run dev`) пароль не спрашивается.
-
-> ⚠️ Пароль закрывает сайт, но не саму базу: кто узнает anon-ключ Supabase, сможет обратиться к ней напрямую.
-> Поэтому не публикуйте ключ и не вписывайте его в `src/config.ts` при публичном репозитории.
+Если раньше данные были в Supabase, остановите CRMFish и выполните:
+```bash
+npm run import:supabase -- https://xxxx.supabase.co sb_publishable_xxxx
+```
+(адрес и ключ — те же, что были в Vercel в `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`).
 
 ## Как считается
 
@@ -74,13 +63,16 @@ npm run dev
 ## Структура
 
 ```
+CRMFish.command        запуск двойным кликом
+server.mjs             локальный сервер: приложение + API базы
+server/db.mjs          встроенная база (data/crmfish.json)
+server/api.mjs         API /api/* и обновления в реальном времени
+scripts/               перенос данных из Supabase
 src/
-  config.ts              ← ключи Supabase
-  types.ts               модели Product / Settings / фильтры
-  lib/calc.ts            расчёты, данные графика, фильтры и сортировка
-  lib/storage.ts         работа с Supabase
-  lib/format.ts          форматирование ₽/¥/дат, парсинг чисел
-  hooks/useCrmData.ts    загрузка, оптимистичные обновления, realtime
-  components/            SetupScreen, Header, Dashboard, SettingsPanel, BalanceChart, ProductTable, ProductForm, Toggle
-supabase/schema.sql      таблицы, RLS-политики, realtime
+  types.ts             модели Product / Settings / фильтры
+  lib/calc.ts          расчёты, данные графика, фильтры и сортировка
+  lib/storage.ts       обращение к встроенной базе
+  lib/format.ts        форматирование ₽/¥/дат, ссылка из сообщения Xianyu
+  hooks/useCrmData.ts  загрузка, мгновенные обновления, синхронизация окон
+  components/          Header, Dashboard, SettingsPanel, BalanceChart, ProductTable, ProductForm, Toggle
 ```

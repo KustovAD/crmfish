@@ -6,17 +6,11 @@ import { Header } from './components/Header';
 import { ProductForm } from './components/ProductForm';
 import { ProductTable } from './components/ProductTable';
 import { SettingsPanel } from './components/SettingsPanel';
-import { isSupabaseConfigured } from './config';
-import { SetupScreen } from './components/SetupScreen';
 import { useCrmData } from './hooks/useCrmData';
 import { buildChartData, computeMetrics } from './lib/calc';
 import type { Filters, Product, SortState } from './types';
 
 export default function App() {
-  return isSupabaseConfigured ? <Crm /> : <SetupScreen />;
-}
-
-function Crm() {
   const data = useCrmData();
   const { products, settings } = data;
 
@@ -97,7 +91,7 @@ function Crm() {
         )}
 
         <footer className="pb-6 pt-2 text-center text-xs text-slate-600">
-          CRMFish · данные общие для всех пользователей
+          CRMFish · данные хранятся в папке проекта: data/crmfish.json
         </footer>
       </main>
 
