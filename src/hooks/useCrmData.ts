@@ -108,6 +108,7 @@ export function useCrmData() {
   );
 
   return {
+    mode: store.mode,
     products,
     settings,
     loading,

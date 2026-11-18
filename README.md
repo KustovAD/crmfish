@@ -3,7 +3,15 @@
 CRM для перепродажи товаров с Goofish (Xianyu): учёт товаров, себестоимость в ₽ по курсу юаня (с доставкой),
 прибыль по каждой позиции, дашборд и график баланса по каждому заказу и продаже.
 
-**Стек:** React 18 + TypeScript + Vite + Tailwind CSS + Recharts. База — встроенная, файл в папке проекта.
+**Стек:** React 18 + TypeScript + Vite + Tailwind CSS + Recharts.
+
+**Два режима базы — выбираются сами:**
+| Где запущено | База | Пароль |
+|---|---|---|
+| На вашем компьютере (`CRMFish.command`, `npm run dev`) | встроенная, файл `data/crmfish.json` | нет |
+| На Vercel (заданы ключи Supabase) | Supabase, общая для всех | `APP_PASSWORD` |
+
+Данные в этих режимах разные и между собой не синхронизируются.
 
 ## Запуск
 
@@ -34,10 +42,28 @@ npm run serve    # сборка + обычный запуск (то же дел�
 - Пока CRMFish запущен, его можно открыть с телефона или другого компьютера в той же Wi-Fi сети —
   адрес показывается в терминале при запуске (`http://192.168.x.x:5173`). Изменения видны сразу во всех открытых окнах.
 
-> Приложение работает, только пока запущено на вашем компьютере. Vercel для него больше не нужен:
-> на Vercel нельзя хранить файлы, поэтому встроенная база там работать не будет.
+> Встроенная база работает, только пока CRMFish запущен на вашем компьютере.
+> На Vercel файлы хранить нельзя — там используется Supabase (раздел ниже).
 
-### Перенос данных из Supabase (однократно)
+## Vercel + Supabase (доступ отовсюду)
+
+1. **Supabase:** создайте проект на supabase.com, откройте **SQL Editor**, вставьте `supabase/schema.sql`, нажмите **Run**.
+   Адрес и ключ — кнопка **Connect** вверху дашборда (Project URL и publishable key `sb_publishable_…`).
+2. **GitHub:** `git push`.
+3. **Vercel:** проект → **Environment Variables** (в боковом меню) → добавьте:
+   | Имя | Значение |
+   |---|---|
+   | `APP_PASSWORD` | пароль для входа на сайт |
+   | `VITE_SUPABASE_URL` | Project URL |
+   | `VITE_SUPABASE_ANON_KEY` | publishable key |
+4. **Deployments → ⋯ → Redeploy**, чтобы переменные применились.
+
+Пароль проверяет `middleware.ts` на сервере Vercel: без него не отдаётся ни страница, ни код.
+Вход запоминается на 30 дней, кнопка выхода — в шапке. Локально пароль не спрашивается.
+
+> Не создавайте `.env.local` с ключами Supabase на компьютере — иначе и локальный запуск уйдёт в Supabase.
+
+### Перенос данных из Supabase во встроенную базу (однократно)
 
 Если раньше данные были в Supabase, остановите CRMFish и выполните:
 ```bash
@@ -67,11 +93,14 @@ CRMFish.command        запуск двойным кликом
 server.mjs             локальный сервер: приложение + API базы
 server/db.mjs          встроенная база (data/crmfish.json)
 server/api.mjs         API /api/* и обновления в реальном времени
+middleware.ts          пароль на сайт (только Vercel)
+supabase/schema.sql    таблицы для Supabase
 scripts/               перенос данных из Supabase
 src/
   types.ts             модели Product / Settings / фильтры
   lib/calc.ts          расчёты, данные графика, фильтры и сортировка
-  lib/storage.ts       обращение к встроенной базе
+  lib/storage.ts       встроенная база или Supabase — выбирается автоматически
+  config.ts            ключи Supabase (из переменных окружения)
   lib/format.ts        форматирование ₽/¥/дат, ссылка из сообщения Xianyu
   hooks/useCrmData.ts  загрузка, мгновенные обновления, синхронизация окон
   components/          Header, Dashboard, SettingsPanel, BalanceChart, ProductTable, ProductForm, Toggle

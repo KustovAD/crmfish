@@ -34,7 +34,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <Header onAdd={openAdd} />
+      <Header mode={data.mode} onAdd={openAdd} />
 
       <main className="mx-auto max-w-7xl space-y-4 px-4 py-5 sm:px-6">
         {data.error && (
@@ -91,7 +91,7 @@ export default function App() {
         )}
 
         <footer className="pb-6 pt-2 text-center text-xs text-slate-600">
-          CRMFish · данные хранятся в папке проекта: data/crmfish.json
+          CRMFish · {data.mode === 'supabase' ? 'общая база Supabase' : 'данные хранятся в папке проекта: data/crmfish.json'}
         </footer>
       </main>
 
